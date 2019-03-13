@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from django.db import models
 
 # Create your models here.
@@ -17,23 +15,28 @@ LABELS = (
 )
 
 
-class Article(models.Model):
-    title = models.CharField(max_length=1000)
-    content = models.CharField(max_length=10000)
-    country = models.CharField(max_length=2, choices=COUNTRIES)
-    pub_date = models.DateTimeField('date published', blank=True)
-    analysed_at = models.DateTimeField('date article created', blank=True)
+class ArticleManager(models.Manager):
+    def by_label(self, label):
+        return super().get_queryset().filter(label=label)
 
-    label = models.CharField(max_length=1, choices=LABELS)
+    def latest(self):
+        return super().get_queryset().limit(50).order_by('-created_at')
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=2000, blank=True, null=True)
+    description = models.CharField(max_length=5000, blank=True, null=True)
+    author = models.CharField(max_length=2000, blank=True, null=True)
+    content = models.CharField(max_length=10000, blank=True, null=True)
+    country = models.CharField(max_length=2, choices=COUNTRIES)
+    published_at = models.DateTimeField('date published', blank=True, auto_now_add=True)
+    analysed_at = models.DateTimeField('date article classified', null=True, blank=True)
+    source = models.CharField(max_length=2000, blank=True, null=True)
+    url = models.CharField(max_length=2000, blank=True, null=True)
+    label = models.CharField(max_length=1, choices=LABELS, blank=True, null=True)
 
     def __str__(self):
-        return self.content
+        return self.title
 
-
-class Choice(models.Model):
-    article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    chosen_label = models.CharField(max_length=1, choices=LABELS)
-    votes = models.IntegerField(default=0)
-    created = models.DateTimeField('date article created')
-    updated = models.DateTimeField('date article updated')
-
+    objects = models.Manager()
+    ArticleManager = ArticleManager()
